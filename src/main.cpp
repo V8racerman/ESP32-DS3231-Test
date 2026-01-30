@@ -25,11 +25,12 @@ myRTC.turnOffAlarm(1);
 myRTC.turnOffAlarm(2);
 myRTC.enableOscillator(false, false, 0);
 myRTC.enable32kHz(false);
-// myRTC.setSecond(0);
-// myRTC.setMinute(13);
-// myRTC.setHour(16);
-// myRTC.setMonth(1);
-// myRTC.setYear(26);
+//myRTC.setSecond(0);
+//myRTC.setMinute(29);
+//myRTC.setHour(15);
+//myRTC.setDate(30);
+//myRTC.setMonth(1);
+//myRTC.setYear(26);
 }
 
 void setup() {
