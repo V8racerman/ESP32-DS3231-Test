@@ -11,6 +11,7 @@ Test/demo of read routines for a DS3231 RTC.
 
 #include <DS3231.h>
 #include <Wire.h>
+#include <WiFi.h>
 
 DS3231 myRTC;
 bool century = false;
