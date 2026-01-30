@@ -23,8 +23,8 @@ void setClock(void)
 {
 myRTC.turnOffAlarm(1);
 myRTC.turnOffAlarm(2);
-myRTC.enableOscillator(true, false, 0);
-myRTC.enable32kHz(true);
+myRTC.enableOscillator(false, false, 0);
+myRTC.enable32kHz(false);
 // myRTC.setSecond(0);
 // myRTC.setMinute(13);
 // myRTC.setHour(16);
