@@ -1,2 +1,2 @@
-const char* ssid       = "Enterprise";
-const char* password   = "doctorwho";
+const char* ssid       = "my_ssid";
+const char* password   = "my_psswd";
