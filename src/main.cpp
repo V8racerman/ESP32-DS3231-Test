@@ -9,30 +9,129 @@ Test/demo of read routines for a DS3231 RTC.
 
 */
 
-#include <DS3231.h>
+// #include <DS3231.h>
 #include <Wire.h>
 #include <WiFi.h>
+#include <TM1637Display.h>
+#include "credentials.h"
+#include "setgpio.h"
+#include "SimpleAlarmClock.h"
+#include "Clocks.h"
+#include "TimeUtils.h"
+#include "main.h"
+#include "clock_constants.h"
 
-DS3231 myRTC;
+// DS3231 myRTC;
 bool century = false;
 bool h12Flag;
 bool pmFlag;
 byte alarmDay, alarmHour, alarmMinute, alarmSecond, alarmBits;
 bool alarmDy, alarmH12Flag, alarmPmFlag;
 
-void setClock(void)
-{
-myRTC.turnOffAlarm(1);
-myRTC.turnOffAlarm(2);
-myRTC.enableOscillator(false, false, 0);
-myRTC.enable32kHz(false);
-//myRTC.setSecond(0);
-//myRTC.setMinute(29);
-//myRTC.setHour(15);
-//myRTC.setDate(30);
-//myRTC.setMonth(1);
-//myRTC.setYear(26);
+int           daylightOffset_sec = 0; // 3600;
+bool          bst = false;
+bool          old_bst = true;
+
+SimpleAlarmClock extern Clock;
+SimpleAlarmClock Clock(RTC_addr, EEPROM_addr, INTCN);
+
+TM1637Display segment7(CLK, DIO);
+
+DateTime NowTime;
+byte previous_second;
+
+
+void display_my_time(uint8_t m_hour, uint8_t m_min, bool colon) {
+
+segment7.showNumberDecEx(m_min, COLON_OFF, true, 2, 2);
+  if (!colon) {
+    segment7.showNumberDecEx(m_hour, COLON_OFF, false, 2, 0); 
+  } else {
+    segment7.showNumberDecEx(m_hour, COLON_ON, false, 2, 0);
+    }
+  digitalWrite(LED_BUILTIN,(uint8_t)colon);    
 }
+
+void internet_time(void) {
+
+ DateTime NowTime;
+ struct tm current_time; 
+ int attempts = 12;
+ int attempt = 0;
+ int connected_to_wifi;
+ int connected_to_remote_server = 0;
+ 
+   //connect to WiFi
+  digitalWrite(LED_BUILTIN, HIGH); 
+  digitalWrite(GREEN_LED_LEFT, LOW);
+  digitalWrite(GREEN_LED_RIGHT, LOW);
+  Serial.print("Connecting to ");
+  Serial.print(ssid);
+  WiFi.begin(ssid, password);
+  connected_to_wifi = WiFi.status();
+  while ((connected_to_wifi != WL_CONNECTED) && (attempt < attempts)) {
+      // Display_Clock();
+      Serial.print(".");
+      delay(500);
+      attempt++;
+      connected_to_wifi = WiFi.status();
+      }
+      
+  if (connected_to_wifi != WL_CONNECTED){ 
+    digitalWrite(GREEN_LED_LEFT, HIGH); 
+    Serial.println(" "); } else {
+      attempt = 0;
+      Serial.println(" CONNECTED.  Initialising time reference ...");
+      //init and get the time
+      NowTime = Clock.read();
+      bst = british_summer_time(NowTime);
+      if (bst) { daylightOffset_sec = 3600; } else {daylightOffset_sec = 0; }
+      configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+      connected_to_remote_server = getLocalTime(&current_time);
+      while ((!connected_to_remote_server) && (attempt < attempts)){
+        Serial.println("Unable to connect to remote time server.  Retrying ...");
+        // Display_Clock();
+        delay(500);
+        attempt++;
+        configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+        connected_to_remote_server = getLocalTime(&current_time);
+        }
+      if (!connected_to_remote_server) { digitalWrite(GREEN_LED_RIGHT, HIGH); } else {
+        old_bst = bst;
+        NowTime = internet_to_RTC(current_time, M24hr);
+        bst = british_summer_time(NowTime);
+        if (bst != old_bst) {
+          attempt = 0;
+          if (bst) { daylightOffset_sec = 3600; } else {daylightOffset_sec = 0; }
+          configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+          connected_to_remote_server = getLocalTime(&current_time);
+          while ((!connected_to_remote_server) && (attempt < attempts)){
+            Serial.println("Unable to connect to remote time server.  Retrying ...");
+            // Display_Clock();
+            delay(500);
+            attempt++;
+            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+            connected_to_remote_server = getLocalTime(&current_time);
+            }  
+          }
+        }  
+        if (!connected_to_remote_server) { digitalWrite(GREEN_LED_RIGHT, HIGH); } else { 
+          //NowTime = Clock.read();
+          NowTime = internet_to_RTC(current_time, M24hr);
+          old_bst = bst;
+          bst = british_summer_time(NowTime);
+          Clock.write(NowTime);
+          Serial.print("Time reference initialised. ");  
+          digitalWrite(GREEN_LED_RIGHT, LOW);
+          }
+      // disconnect WiFi as it's no longer needed 
+      WiFi.disconnect(true);
+      WiFi.mode(WIFI_OFF);
+      Serial.println("Wi-Fi disconnected and turned off.");
+      } 
+    digitalWrite(BLUE_LED, LOW); 
+}
+
 
 void setup() {
 
@@ -43,54 +142,61 @@ Wire.begin();
 
 // Start the serial interface
 Serial.begin(115200);
-setClock();
+internet_time();
+previous_second = NowTime.Second;
+segment7.setBrightness(0x07);
 }
 
 void loop()	{
 
-digitalWrite(2, !digitalRead(2));
-// send what's going on to the serial monitor.
+NowTime = Clock.read();
+if (NowTime.Second != previous_second)
+  {
+  previous_second = NowTime.Second;
+  display_my_time(NowTime.Hour, NowTime.Minute, true);
+  // send what's going on to the serial monitor.
 
-// Start with the year
-Serial.print("2");
-if (century) { Serial.print("1"); } else { Serial.print("0"); }  // Won't need this for 89 years. 
-Serial.print(myRTC.getYear(), DEC);
-Serial.print(' ');
+  // Start with the year
+  Serial.print("2");
+  // if (century) { Serial.print("1"); } else { Serial.print("0"); }  // Won't need this for 89 years. 
+  Serial.print("0"); 
+  Serial.print(NowTime.Year, DEC);
+  Serial.print(' ');
 
-// then the month
-Serial.print(myRTC.getMonth(century), DEC);
-Serial.print(" ");
+  // then the month
+  Serial.print(NowTime.Month, DEC);
+  Serial.print(" ");
 
-// then the date
-Serial.print(myRTC.getDate(), DEC);
-Serial.print(" ");
+  // then the date
+  Serial.print(NowTime.Day, DEC);
+  Serial.print(" ");
 
-// and the day of the week
-Serial.print(myRTC.getDoW(), DEC);
-Serial.print(" ");
+  // and the day of the week
+  Serial.print(dow_str[NowTime.Dow]);
+  Serial.print(" ");
 
-// Finally the hour, minute, and second
-Serial.print(myRTC.getHour(h12Flag, pmFlag), DEC);
-Serial.print(" ");
-Serial.print(myRTC.getMinute(), DEC);
-Serial.print(" ");
-Serial.print(myRTC.getSecond(), DEC);
+  // Finally the hour, minute, and second
+  Serial.print(NowTime.Hour);
+  Serial.print(" ");
+  Serial.print(NowTime.Minute);
+  Serial.print(" ");
+  Serial.print(NowTime.Second, DEC);
 
-// Add AM/PM indicator
-if (h12Flag) { if (pmFlag) { Serial.print(" PM "); } else {	Serial.print(" AM "); }	}
-else { Serial.print(" 24h "); }
+  // Add AM/PM indicator
+  if (h12Flag) { if (pmFlag) { Serial.print(" PM "); } else {	Serial.print(" AM "); }	}
+  else { Serial.print(" 24h "); }
 
 // Display the temperature
-Serial.print("T=");
-Serial.print(myRTC.getTemperature(), 2);
+// Serial.print("T=");
+// Serial.print(myRTC.getTemperature(), 2);
 
 // Tell whether the time is (likely to be) valid
-if (myRTC.oscillatorCheck()) { Serial.print(" O+");	} else { Serial.print(" O-"); }
+// if (myRTC.oscillatorCheck()) { Serial.print(" O+");	} else { Serial.print(" O-"); }
 
 // Indicate whether an alarm went off
-if (myRTC.checkIfAlarm(1)) { Serial.print(" A1!"); }
-if (myRTC.checkIfAlarm(2)) { Serial.print(" A2!"); }
-
+// if (myRTC.checkIfAlarm(1)) { Serial.print(" A1!"); }// 
+// if (myRTC.checkIfAlarm(2)) { Serial.print(" A2!"); }
+/*
 // Display Alarm 1 information
 Serial.println();
 Serial.print("Alarm 1: ");
@@ -123,7 +229,9 @@ if (myRTC.checkAlarmEnabled(2))	{ Serial.print("enabled"); }
 Serial.println();
 Serial.print("Alarm bits: ");
 Serial.println(alarmBits, BIN);
-Serial.println();
-delay(500);
-digitalWrite(LED_BUILTIN, LOW);
+*/
+  Serial.println();
+  delay(500);
+  display_my_time(NowTime.Hour, NowTime.Minute, false);
+  }
 }

@@ -1,8 +1,8 @@
 
 #include "SimpleAlarmClock.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/setgpio.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/external_variables.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/clock_constants.h"
+#include "//home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/setgpio.h"
+#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/external_variables.h"
+#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/clock_constants.h"
 #include "Clocks.h"
 #include "GenUtils.h"
 

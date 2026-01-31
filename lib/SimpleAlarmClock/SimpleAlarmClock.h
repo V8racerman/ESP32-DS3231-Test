@@ -66,10 +66,11 @@
 
 #ifndef SimpleAlarmClock_h
 #define SimpleAlarmClock_h
-#include <Wire.h>
 #include <Arduino.h>
+#include <Wire.h>
 
 //Structure used for clock object
+
 struct DateTime {      
   byte Second;       // 0-59 = 6 bits
   byte Minute;       // 0-59 = 6 bits
@@ -80,6 +81,7 @@ struct DateTime {
   byte Year;         // 0-199 = 8 bits
   byte ClockMode;    // 0-2; 0=AM, 1=PM, 2=24hour
 };
+
 
 //Structure used for alarm object
 struct AlarmTime {
