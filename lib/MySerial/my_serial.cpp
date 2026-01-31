@@ -23,10 +23,13 @@ if (monitor_enable) {
   Serial.print(" ");
 
   // Finally the hour, minute, and second
+  if (NowT.Hour < 10) Serial.print('0');
   Serial.print(NowT.Hour);
   Serial.print(":");
+  if (NowT.Minute < 10) Serial.print('0');
   Serial.print(NowT.Minute);
   Serial.print(":");
+  if (NowT.Second < 10) Serial.print('0');
   Serial.print(NowT.Second, DEC);
 
   // Add AM/PM indicator
