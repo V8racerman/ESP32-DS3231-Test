@@ -18,3 +18,6 @@ enum States {
 
 extern States ClockState;
 extern States PrevState;
+
+extern char *mode_str[];
+extern char *dow_str[];

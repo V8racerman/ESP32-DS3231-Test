@@ -8,9 +8,6 @@
 
 const int flashInterval = 500;         // Alarm flashing interval
 
-char *mode_str[] = {"Daily", "Weekday", "Weekend", "Once"};
-char *dow_str[] = {"--", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-
 
 
 const float t_cal  = -3.5;
@@ -20,5 +17,8 @@ const float t_cal  = -3.5;
 
 const char* ntpServer  = "pool.ntp.org";
 const long  gmtOffset_sec = 0;
+
+char *mode_str[] = {"Daily", "Weekday", "Weekend", "Once"};
+char *dow_str[] = {"--", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 #endif
