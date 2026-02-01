@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <WiFi.h>
 #include <TM1637Display.h>
-#include "credentials.h"
+#include "/home/alan/PlatformIO/credentials.h"
 #include "setgpio.h"
 #include "SimpleAlarmClock.h"
 #include "Clocks.h"
