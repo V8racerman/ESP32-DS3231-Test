@@ -1,5 +1,17 @@
 #include "my_serial.h"
 
+void my_serial_time(DateTime NowT) {
+
+  if (NowT.Hour < 10) Serial.print('0');
+  Serial.print(NowT.Hour);
+  Serial.print(":");
+  if (NowT.Minute < 10) Serial.print('0');
+  Serial.print(NowT.Minute);
+  Serial.print(":");
+  if (NowT.Second < 10) Serial.print('0');
+  Serial.print(NowT.Second, DEC);
+  Serial.println();
+}
 
 void my_serial_monitor(DateTime NowT, bool h12Flagx, bool pmFlagx, bool monitor_enable) {
 

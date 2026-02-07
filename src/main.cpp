@@ -1,7 +1,10 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <SPI.h>
 #include <WiFi.h>
 #include <TM1637Display.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include "/home/alan/PlatformIO/credentials.h"
 #include "setgpio.h"
 #include "SimpleAlarmClock.h"
@@ -24,10 +27,15 @@ SimpleAlarmClock Clock(RTC_addr, EEPROM_addr, INTCN);
 
 TM1637Display segment7(CLK, DIO);
 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
+   OLED_MOSI_D1, OLED_CLK_D0, OLED_DC, OLED_RESET, OLED_CS);
+
 DateTime NowTime;
 byte previous_second = 0;
 
 void segment7_time(uint8_t m_hour, uint8_t m_min, bool colon) {
+
+  if (colon) { my_serial_time(NowTime); }
 
   segment7.showNumberDecEx(m_min, COLON_OFF, true, 2, 2);
   if (!colon)
@@ -154,11 +162,36 @@ void internet_time(void) {
 void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(DOWN_SW, INPUT);
+  pinMode(UP_SW, INPUT);
+  pinMode(EDIT_SW, INPUT);
+  pinMode(SELECT_SW, INPUT);
+
   Wire.begin();
-  segment7.setBrightness(0x05);
+  Serial.begin(115200);
+  segment7.setBrightness(0x07);
   NowTime = Clock.read();
   segment7_time(NowTime.Hour, NowTime.Minute, false);
-  Serial.begin(115200);
+  
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+
+  display.cp437(true);         // Use full 256 char 'Code Page 437' font
+  display.setTextSize(2);      // 2:1 pixel scale
+
+  // Show initial display buffer contents on the screen --
+  // the library initializes this with an Adafruit splash screen.
+  display.display();
+  delay(2000); // Pause for 2 seconds
+
+  // Clear the buffer
+  display.clearDisplay();
+  display.display();
+
+  
   internet_time();
   previous_second = NowTime.Second;
 }
@@ -169,7 +202,8 @@ void loop()
   NowTime = Clock.read();
   if (NowTime.Second != previous_second) {
     previous_second = NowTime.Second;
-    my_serial_monitor(NowTime, h12Flag, pmFlag, true);
+    // my_serial_monitor(NowTime, h12Flag, pmFlag, true);
+    // my_serial_time(NowTime);
     segment7_time(NowTime.Hour, NowTime.Minute, true);
     delay(500);
     segment7_time(NowTime.Hour, NowTime.Minute, false);
