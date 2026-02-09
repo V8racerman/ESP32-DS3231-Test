@@ -2,7 +2,6 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <WiFi.h>
-#include <TM1637Display.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "/home/alan/PlatformIO/credentials.h"
@@ -14,6 +13,7 @@
 #include "clock_constants.h"
 #include "my_serial.h"
 #include "myOLED.h"
+#include "myLED.h"
 
 bool pmFlag, h12Flag, century = false;
 byte alarmDay, alarmHour, alarmMinute, alarmSecond, alarmBits;
@@ -26,44 +26,11 @@ bool old_bst = true;
 SimpleAlarmClock extern Clock;
 SimpleAlarmClock Clock(RTC_addr, EEPROM_addr, INTCN);
 
-TM1637Display segment7(CLK, DIO);
 
 DateTime NowTime;
 AlarmTime myAlarm1, myAlarm2;
 byte previous_second = 0;
 
-void segment7_time(uint8_t m_hour, uint8_t m_min, bool colon) {
-
-uint8_t segment7_brightness = 4;
-
-switch ( m_hour ) {
-  case ( 21, 22, 23, 0, 1, 2, 3, 4, 5, 6 ):
-    segment7_brightness = 3;
-    break;
-  case (7, 8, 17, 18, 19, 20):
-    segment7_brightness = 4;
-    break;
-  case (9, 10, 11, 12, 13, 14, 15, 16):
-    segment7_brightness = 5;
-    break;
-  default:
-    break;  
-  }
-  segment7.setBrightness(segment7_brightness);
-
-  if (colon) { my_serial_time(NowTime); }
-
-  segment7.showNumberDecEx(m_min, COLON_OFF, true, 2, 2);
-  if (!colon)
-  {
-    segment7.showNumberDecEx(m_hour, COLON_OFF, false, 2, 0);
-  }
-  else
-  {
-    segment7.showNumberDecEx(m_hour, COLON_ON, false, 2, 0);
-  }
-  digitalWrite(LED_BUILTIN, (uint8_t)colon);
-}
 
 void internet_time(void) {
 
@@ -186,8 +153,8 @@ void setup() {
   Wire.begin();
   Serial.begin(115200);
   NowTime = Clock.read();
-  segment7.setBrightness(0x05);
-  segment7_time(NowTime.Hour, NowTime.Minute, false);
+  segment7_setup(NowTime.Hour, NowTime.Minute);
+  
   setup_OLED();
   internet_time();
   previous_second = NowTime.Second;
@@ -199,6 +166,7 @@ void loop()
   NowTime = Clock.read();
   if (NowTime.Second != previous_second) {
     previous_second = NowTime.Second;
+    my_serial_time(NowTime);
     Update_Display(&NowTime, &myAlarm1, &myAlarm2, 20);
     // my_serial_monitor(NowTime, h12Flag, pmFlag, true);
     // my_serial_time(NowTime);

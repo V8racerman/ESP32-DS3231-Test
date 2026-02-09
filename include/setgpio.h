@@ -13,11 +13,4 @@
 #define BUZZER_PIN       4 //13
 #define SQW_PIN         23 //32   
 
-// 7 Segment Module connection pins (Digital Pins)
-#define CLK 13
-#define DIO 14
-#define COLON_ON  0b01000000
-#define COLON_OFF 0b00000000
-
-
 #endif
