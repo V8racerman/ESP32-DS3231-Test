@@ -1,10 +1,10 @@
 
 #include "SimpleAlarmClock.h"
-#include "//home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/setgpio.h"
 #include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/external_variables.h"
 #include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/clock_constants.h"
 #include "Clocks.h"
 #include "GenUtils.h"
+#include "/home/alan/PlatformIO/credentials.h"
 
       /* I2C address can be found in the datasheet Figure 1. Device
          Address ZS-040 module has pull-up resistors on these pins
@@ -18,9 +18,17 @@
          | All Short| b1101000 | 0x50 | 80 |
          allowing up to eight combinations                      */
 
+const char* ntpServer  = "pool.ntp.org";
+const long  gmtOffset_sec = 0;
+
 /* instantiate SimpleAlarmClock */
 
 SimpleAlarmClock extern Clock;
+
+void Update_temperature(float *temper) {
+    
+    *temper = Clock.getTemperatureFloat() - 1.5;
+}
 
 void Initial_Clock(void) {
 
@@ -60,6 +68,119 @@ void Setup_Clock(void) {
     TempAlarm.ClockMode = M24hr;
     Clock.setAlarm(TempAlarm, alarm2);
   }
+}
+
+void internet_time(void) {
+
+  DateTime NowTime;
+  struct tm current_time;
+  int daylightOffset_sec = 0; // 3600;
+  bool bst = false;
+  bool old_bst = true;
+  int attempts = 12;
+  int attempt = 0;
+  int connected_to_wifi;
+  int connected_to_remote_server = 0;
+
+  // connect to WiFi
+  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(GREEN_LED_LEFT, LOW);
+  digitalWrite(GREEN_LED_RIGHT, LOW);
+  Serial.print("Connecting to ");
+  Serial.print(ssid);
+  WiFi.begin(ssid, password);
+  connected_to_wifi = WiFi.status();
+  while ((connected_to_wifi != WL_CONNECTED) && (attempt < attempts))
+  {
+    // Display_Clock();
+    Serial.print(".");
+    delay(500);
+    attempt++;
+    connected_to_wifi = WiFi.status();
+  }
+
+  if (connected_to_wifi != WL_CONNECTED)
+  {
+    digitalWrite(GREEN_LED_LEFT, HIGH);
+    Serial.println(" ");
+  }
+  else
+  {
+    attempt = 0;
+    Serial.println(" CONNECTED.  Initialising time reference ...");
+    // init and get the time
+    NowTime = Clock.read();
+    bst = british_summer_time(NowTime);
+    if (bst)
+    {
+      daylightOffset_sec = 3600;
+    }
+    else
+    {
+      daylightOffset_sec = 0;
+    }
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    connected_to_remote_server = getLocalTime(&current_time);
+    while ((!connected_to_remote_server) && (attempt < attempts))
+    {
+      Serial.println("Unable to connect to remote time server.  Retrying ...");
+      // Display_Clock();
+      delay(500);
+      attempt++;
+      configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+      connected_to_remote_server = getLocalTime(&current_time);
+    }
+    if (!connected_to_remote_server)
+    {
+      digitalWrite(GREEN_LED_RIGHT, HIGH);
+    }
+    else
+    {
+      old_bst = bst;
+      NowTime = internet_to_RTC(current_time, M24hr);
+      bst = british_summer_time(NowTime);
+      if (bst != old_bst)
+      {
+        attempt = 0;
+        if (bst)
+        {
+          daylightOffset_sec = 3600;
+        }
+        else
+        {
+          daylightOffset_sec = 0;
+        }
+        configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+        connected_to_remote_server = getLocalTime(&current_time);
+        while ((!connected_to_remote_server) && (attempt < attempts))
+        {
+          Serial.println("Unable to connect to remote time server.  Retrying ...");
+          // Display_Clock();
+          delay(500);
+          attempt++;
+          configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+          connected_to_remote_server = getLocalTime(&current_time);
+        }
+      }
+    }
+    if (!connected_to_remote_server) {
+      digitalWrite(GREEN_LED_RIGHT, HIGH);
+    }
+    else {
+      // NowTime = Clock.read();
+      NowTime = internet_to_RTC(current_time, M24hr);
+      old_bst = bst;
+      bst = british_summer_time(NowTime);
+      Clock.write(NowTime);
+      Serial.print("Time reference initialised. ");
+      digitalWrite(GREEN_LED_RIGHT, LOW);
+    }
+    // disconnect WiFi as it's no longer needed
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    Serial.println("Wi-Fi disconnected and turned off.");
+  }
+  digitalWrite(BLUE_LED, LOW);
 }
 
 /* ***********************************************************
@@ -374,7 +495,20 @@ void Snooze(byte active){
         break;
     }
     toggleLED(false, BLUE_LED);                  // Confirm LED turned off
- }
+}
+
+void preset_Alarms(uint8_t My_hr, uint8_t My_min, uint8_t My_sec, uint8_t selected_alarm) {
+
+    AlarmTime TempAlarm;
+
+    TempAlarm.Hour = My_hr;
+    TempAlarm.Minute = My_min;
+    TempAlarm.Second = My_sec;
+    TempAlarm.Enabled = true;
+    TempAlarm.AlarmMode = 0;
+    TempAlarm.ClockMode = 2;
+    Clock.setAlarm(TempAlarm, selected_alarm);
+}
 
 
 
