@@ -13,6 +13,7 @@
 #include "main.h"
 #include "clock_constants.h"
 #include "my_serial.h"
+#include "myOLED.h"
 
 bool pmFlag, h12Flag, century = false;
 byte alarmDay, alarmHour, alarmMinute, alarmSecond, alarmBits;
@@ -27,13 +28,28 @@ SimpleAlarmClock Clock(RTC_addr, EEPROM_addr, INTCN);
 
 TM1637Display segment7(CLK, DIO);
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
-   OLED_MOSI_D1, OLED_CLK_D0, OLED_DC, OLED_RESET, OLED_CS);
-
 DateTime NowTime;
+AlarmTime myAlarm1, myAlarm2;
 byte previous_second = 0;
 
 void segment7_time(uint8_t m_hour, uint8_t m_min, bool colon) {
+
+uint8_t segment7_brightness = 4;
+
+switch ( m_hour ) {
+  case ( 21, 22, 23, 0, 1, 2, 3, 4, 5, 6 ):
+    segment7_brightness = 3;
+    break;
+  case (7, 8, 17, 18, 19, 20):
+    segment7_brightness = 4;
+    break;
+  case (9, 10, 11, 12, 13, 14, 15, 16):
+    segment7_brightness = 5;
+    break;
+  default:
+    break;  
+  }
+  segment7.setBrightness(segment7_brightness);
 
   if (colon) { my_serial_time(NowTime); }
 
@@ -169,29 +185,10 @@ void setup() {
 
   Wire.begin();
   Serial.begin(115200);
-  segment7.setBrightness(0x07);
   NowTime = Clock.read();
+  segment7.setBrightness(0x05);
   segment7_time(NowTime.Hour, NowTime.Minute, false);
-  
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if(!display.begin(SSD1306_SWITCHCAPVCC)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;); // Don't proceed, loop forever
-  }
-
-  display.cp437(true);         // Use full 256 char 'Code Page 437' font
-  display.setTextSize(2);      // 2:1 pixel scale
-
-  // Show initial display buffer contents on the screen --
-  // the library initializes this with an Adafruit splash screen.
-  display.display();
-  delay(2000); // Pause for 2 seconds
-
-  // Clear the buffer
-  display.clearDisplay();
-  display.display();
-
-  
+  setup_OLED();
   internet_time();
   previous_second = NowTime.Second;
 }
@@ -202,6 +199,7 @@ void loop()
   NowTime = Clock.read();
   if (NowTime.Second != previous_second) {
     previous_second = NowTime.Second;
+    Update_Display(&NowTime, &myAlarm1, &myAlarm2, 20);
     // my_serial_monitor(NowTime, h12Flag, pmFlag, true);
     // my_serial_time(NowTime);
     segment7_time(NowTime.Hour, NowTime.Minute, true);

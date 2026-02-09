@@ -19,11 +19,5 @@
 #define COLON_ON  0b01000000
 #define COLON_OFF 0b00000000
 
-// 6 Pin OLED Display
-#define OLED_CLK_D0 17 //19 //18 //32  // D0
-#define OLED_MOSI_D1 5 //18 //23 //33  //D1
-#define OLED_RESET  18 // 5 // 5
-#define OLED_DC     19 //17 //17 //26
-#define OLED_CS     16 //23 //16 //-1 Not Used
 
 #endif
