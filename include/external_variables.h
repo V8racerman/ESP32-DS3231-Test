@@ -1,6 +1,6 @@
-extern int       nx;
-extern int       melody_index;
-extern int       loop_counter;
+// extern int       nx;
+// extern int       melody_index;
+// extern int       loop_counter;
 
 #ifndef external_variables_h
 #define external_variables_h

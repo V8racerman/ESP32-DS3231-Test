@@ -575,3 +575,29 @@ bool check_for_change(DateTime *NT, DateTime *PNT, AlarmTime *A1, AlarmTime *PA1
  return (false); 
 }
 
+void Alarm_LED(void) {
+
+ switch (Clock.alarmStatus()) {
+    case 0:
+        digitalWrite(LED_LEFT, HIGH);
+        digitalWrite(LED_RIGHT, HIGH);
+        break;
+    case 1:
+        digitalWrite(LED_LEFT, LOW);
+        digitalWrite(LED_RIGHT, HIGH);
+        break; 
+    case 2:
+        digitalWrite(LED_LEFT, HIGH);
+        digitalWrite(LED_RIGHT, LOW);
+        break; 
+    case 3:
+        digitalWrite(LED_LEFT, LOW);
+        digitalWrite(LED_RIGHT, LOW);
+        break;
+    default:
+        break;      
+
+ }
+
+}
+

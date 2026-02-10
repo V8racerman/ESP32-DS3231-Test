@@ -4,6 +4,10 @@
 #include <WiFi.h>
 #include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/setgpio.h"
 
+#define LED_LEFT 25
+#define LED_RIGHT 27
+#define LED_MIDDLE 26
+
 #include "TimeUtils.h"
 
 const byte RTC_addr    = 0x68;               // I2C address of DS3231 RTC
@@ -28,5 +32,6 @@ void Update_temperature(float *temper);
 void preset_Alarms(uint8_t My_hr, uint8_t My_min, uint8_t My_sec, uint8_t selected_alarm);
 bool Update_Clock(DateTime *NT, AlarmTime *A1, AlarmTime *A2, float *xtemp);
 bool check_for_change(DateTime *NT, DateTime *PNT, AlarmTime *A1, AlarmTime *PA1, AlarmTime *A2, AlarmTime *PA2);
+void Alarm_LED(void);
 
 #endif

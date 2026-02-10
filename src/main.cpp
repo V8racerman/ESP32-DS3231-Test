@@ -12,6 +12,7 @@
 #include "my_serial.h"
 #include "myOLED.h"
 #include "myLED.h"
+#include "Tones.h"
 
 const int flashInterval = 500;         // Alarm flashing interval
 
@@ -27,6 +28,7 @@ float temperature = 20.0;
 DateTime NowTime;
 AlarmTime myAlarm1, myAlarm2;
 byte previous_second = 0;
+byte previous_minute = 0;
 byte          cpIndex = 0;              // Cursor Position Index - used for edit mode
 byte          ActiveAlarms = 0;         // used to store active alarms
 bool          changeFlag = true;
@@ -34,9 +36,9 @@ bool          changeFlag = true;
 States ClockState;
 States PrevState;
 
-int nx = 0;
-int melody_index = 0;
-int loop_counter = 0;
+// int nx = 0;
+// int melody_index = 0;
+// int loop_counter = 0;
 
 void setup() {
 
@@ -50,8 +52,10 @@ void setup() {
 
   Wire.begin();
   Serial.begin(115200);
-  preset_Alarms(12, 10, 0, alarm1);
-  preset_Alarms(17, 50, 0, alarm2);
+  Setup_Tone();
+  clearAlarms();
+  preset_Alarms(9,  0, 0, alarm1);
+  preset_Alarms(11, 0, 0, alarm2);
   Update_temperature(&temperature);
   NowTime = Clock.read();
   myAlarm1 = Clock.readAlarm(alarm1);
@@ -60,21 +64,37 @@ void setup() {
   setup_OLED();
   Update_Display(&NowTime, &myAlarm1, &myAlarm2, temperature);
   internet_time();
+  Alarm_LED();
  }
 
 void loop() {
 
-  if (!digitalRead(SQW_PIN)) {Serial.println("Alarm Detected"); }
-  changeFlag = Update_Clock(&NowTime, &myAlarm1, &myAlarm2, &temperature);
-  if (changeFlag) {
-    changeFlag = false;   
-    my_serial_time(NowTime);
-    Update_Display(&NowTime, &myAlarm1, &myAlarm2, temperature);
-    // my_serial_monitor(NowTime, h12Flag, pmFlag, true);
-    // my_serial_time(NowTime);
-    segment7_time(NowTime.Hour, NowTime.Minute, true);
-    delay(500);
-    segment7_time(NowTime.Hour, NowTime.Minute, false);
-    if (NowTime.Hour == 18 && NowTime.Minute == 55  && NowTime.Second == 0) { internet_time(); }
+  if (!digitalRead(SQW_PIN)) {
+    
+    Play_Alarm();
+    NowTime = Clock.read();
+    if (NowTime.Second != previous_second) {
+      previous_second = NowTime.Second;
+      Update_Display(&NowTime, &myAlarm1, &myAlarm2, temperature);
+      if (NowTime.Minute != previous_minute) {
+        previous_minute = NowTime.Minute;
+        segment7_time(NowTime.Hour, NowTime.Minute, true);
+      }
+    }
+    } else { 
+    changeFlag = Update_Clock(&NowTime, &myAlarm1, &myAlarm2, &temperature);
+    if (changeFlag) {
+      changeFlag = false;   
+      my_serial_time(NowTime);
+      Update_Display(&NowTime, &myAlarm1, &myAlarm2, temperature);
+      // my_serial_monitor(NowTime, h12Flag, pmFlag, true);
+      // my_serial_time(NowTime);
+      segment7_time(NowTime.Hour, NowTime.Minute, true);
+      delay(500);
+      segment7_time(NowTime.Hour, NowTime.Minute, false);
+      if (NowTime.Hour == 18 && NowTime.Minute == 55  && NowTime.Second == 0) { internet_time(); }
+      previous_minute = NowTime.Minute;
+      previous_second = NowTime.Second;
+    }
   }
 }

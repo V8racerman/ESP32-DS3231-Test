@@ -1,11 +1,16 @@
 // #include "SimpleAlarmClock.h"
 #include <Arduino.h>
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/setgpio.h"
+// #include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/setgpio.h"
 #include "Tones.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/external_variables.h"
+// #include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/external_variables.h"
+#include "Clocks.h"
 
 const int number_of_melodies = 5;
 const int loop_max = 5;
+
+  int nx = 0;
+  int melody_index = 0;
+  int loop_counter = 0;
 
  // ESP32 version of the Arduino Beep function - modified to work with alarm
 int beep(int note, int duration, int counter) {
@@ -18,13 +23,13 @@ int beep(int note, int duration, int counter) {
       //Play different LED depending on value of 'counter'
       if(counter % 2 == 0)
       {
-      digitalWrite(GREEN_LED_RIGHT, HIGH);
+      digitalWrite(LED_RIGHT, HIGH);
       delay(duration);
-      digitalWrite(GREEN_LED_RIGHT, LOW);
+      digitalWrite(LED_RIGHT, LOW);
       } else {
-      digitalWrite(GREEN_LED_LEFT, HIGH);
+      digitalWrite(LED_LEFT, HIGH);
       delay(duration);
-      digitalWrite(GREEN_LED_LEFT, LOW);
+      digitalWrite(LED_LEFT, LOW);
       }
       //Stop tone on buzzerPin
       ledcWrite(LEDC_CHANNEL_0,0);
@@ -36,6 +41,7 @@ int beep(int note, int duration, int counter) {
 
  bool Play_Alarm(void) {
 
+digitalWrite(LED_MIDDLE, LOW);
 switch (melody_index) {
   case 0:
     nx = beep(first_section_notes[nx], 25*first_section_durations[nx], nx);
@@ -57,15 +63,35 @@ switch (melody_index) {
   } // end switch melody_index
 
   if (nx == number_of_notes[melody_index]) {
-  nx = 0;
-  melody_index++;
-  melody_index = melody_index % number_of_melodies;
-  if (melody_index == 0) { loop_counter++; }
-  if (loop_counter == loop_max) {
-      return (false); }
-      // clearAlarms();
+    nx = 0;
+    melody_index++;
+    melody_index = melody_index % number_of_melodies;
+    if (melody_index == 0) { loop_counter++; }
+    if (loop_counter == loop_max) {
+      nx = 0;
+      melody_index = 0;
+      loop_counter = 0;
+      Serial.print("Alarm Ended");
+      digitalWrite(LED_MIDDLE, HIGH);
+      clearAlarms();
       // ClockState = ShowClock; 
-      } else return (true);
+      return (false); 
+    }     
+  } 
+  return (true);
+  }
+
+  void Setup_Tone(void) {
+    pinMode(LED_LEFT, OUTPUT);
+    digitalWrite(LED_LEFT, HIGH);
+    pinMode(LED_RIGHT, OUTPUT);
+    digitalWrite(LED_RIGHT, HIGH);
+    pinMode(LED_MIDDLE, OUTPUT);
+    digitalWrite(LED_MIDDLE, HIGH);
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, HIGH);
+    ledcSetup(LEDC_CHANNEL_0, LEDC_TONE_FREQ, LEDC_TIMER_2_BIT);
+    ledcAttachPin(BUZZER_PIN, LEDC_CHANNEL_0);
   }
 
 
