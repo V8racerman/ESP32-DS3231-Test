@@ -510,5 +510,68 @@ void preset_Alarms(uint8_t My_hr, uint8_t My_min, uint8_t My_sec, uint8_t select
     Clock.setAlarm(TempAlarm, selected_alarm);
 }
 
+bool Update_Clock(DateTime *NT, AlarmTime *A1, AlarmTime *A2, float *xtemp) {
+  /* ***************************************************** *
+   * Display clock - skips update if there are no changes
+   *
+   * Parameters:
+   *   changeFlag - true forces display refresh
+   *              - false does nothing
+   * ***************************************************** */
+    
+   float PreviousTemperature;
+    DateTime NowTime;            //create DateTime struct from Library
+    AlarmTime alarm_one;
+    AlarmTime alarm_two;
+    bool change_flag = false;
+    
+    NowTime = Clock.read();
+    alarm_one = Clock.readAlarm(alarm1);
+    alarm_two = Clock.readAlarm(alarm2);
+    //Alarm_Check(alarm_one, alarm_two);
+    //Clock_Check(NowTime);
 
+    // check for temperature change every 60 seconds
+    if (NowTime.Second == 30) {
+        PreviousTemperature = *xtemp;
+        *xtemp = Clock.getTemperature() -1.5;
+        if (*xtemp != PreviousTemperature) {change_flag = true;}
+    }
+
+    // Check for Time change
+    change_flag = check_for_change(&NowTime, NT, &alarm_one, A1, &alarm_two, A2);
+    //Update Display - Only change display if change is detected
+    if (change_flag == true){
+        Time_Copy(NT, &NowTime);
+        Alarm_Copy(A1, &alarm_one);
+        Alarm_Copy(A2, &alarm_two);
+        }
+  return (change_flag);    
+}
+
+bool check_for_change(DateTime *NT, DateTime *PNT, AlarmTime *A1, AlarmTime *PA1, AlarmTime *A2, AlarmTime *PA2) {
+  
+    if (NT->Second != PNT->Second){ return (true); }
+    if (NT->Minute != PNT->Minute){ return (true); }
+    if (NT->Hour != PNT->Hour){ return (true); }
+    if (NT->Day != PNT->Day) { return (true); }
+    if (NT->Month != PNT->Month) { return (true); }
+    if (NT->Year != PNT->Year) { return (true); }
+
+    //Check for Alarm1 Change
+    if (A1->Hour != PA1->Hour){ return (true); }
+    if (A1->Minute != PA1->Minute){ return (true);}
+    if (A1->ClockMode != PA1->ClockMode) { return (true); }
+    if (A1->AlarmMode != PA1->AlarmMode) { return (true); }
+    if (A1->Enabled != PA1->Enabled) { return (true); }
+
+    //Check for Alarm2 Change
+    if (A2->Hour != PA2->Hour){ return (true); }
+    if (A2->Minute != PA2->Minute){ return (true); }
+    if (A2->ClockMode != PA2->ClockMode) { return (true); }
+    if (A2->AlarmMode != PA2->AlarmMode) { return (true); }
+    if (A2->Enabled != PA2->Enabled) { return (true); }
+    
+ return (false); 
+}
 

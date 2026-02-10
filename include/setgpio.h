@@ -11,6 +11,9 @@
 #define UP_SW           35 //34 //25
 #define EDIT_SW         34 //35 //33
 #define BUZZER_PIN       4 //13
-#define SQW_PIN         23 //32   
+#define SQW_PIN         23 //32
+#define ALARM_LED1      25
+#define ALARM_LED2      26
+#define INTERNET_LED    33    
 
 #endif

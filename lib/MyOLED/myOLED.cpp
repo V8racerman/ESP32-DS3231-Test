@@ -6,6 +6,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 char *mode_str[] = {"Daily", "Weekday", "Weekend", "Once"};
 char *dow_str[] = {"--", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+const int flashInterval = 500;         // Alarm flashing interval
+bool  bflash = true;            // used to track the digit editing flash
+bool  oldbflash = false;        // used to detect the bflash transition
+unsigned long previousMillis = 0;       // used to track time flash 
 
 void setup_OLED(void) {
 
@@ -27,6 +31,16 @@ void setup_OLED(void) {
  /* ***********************************************************
  *                    Basic Functions                         *
  * ********************************************************* */
+
+ void flashDisplay(unsigned long *prev_millis, bool *state) {
+  
+  if ((millis() - *prev_millis) >= flashInterval) {
+      *prev_millis = millis();
+      *state = !*state;
+      // toggleLED(true, BLUE_LED);
+      }
+  display.invertDisplay(*state);
+}
 
  char* mode2str(byte bMode) {
  // Alarm mode to string or char array
@@ -127,4 +141,92 @@ void Update_Display(DateTime *clk, AlarmTime *A1, AlarmTime *A2, int Temperature
         display.print(degree);
         display.display();
 
+}
+
+
+
+void editAlarm(byte alarm, byte index, DateTime *myTime, AlarmTime *myalarm1, AlarmTime *myalarm2, float temperature){
+    /*   Alarm 1 hh:mm mode/enabled
+     *   Alarm 2 hh:mm mode/enabled
+     */
+    //Note valid index values are 0-3
+    //(Column, Row)               
+    //Alarm 1                     hh             mm             mode           enabled
+    byte cursorPositions1[][2]= {{row3_c1,row3},{row3_c3,row3},{row3_c4,row3},{row3_c1,row3}};
+    //Alarm 2                     hh             mm             mode           enabled
+    byte cursorPositions2[][2]= {{row4_c1,row4},{row4_c3,row4},{row4_c4,row4},{row4_c1,row4}};
+    int counter, blank_counter = 0;
+    
+    unsigned long int time_marker;
+    time_marker = millis();
+    if ((time_marker - previousMillis) >= flashInterval) {
+      previousMillis = time_marker;
+      bflash = !bflash;
+    }
+    if (bflash && !oldbflash) {
+        oldbflash = bflash;
+        switch (index) {
+          case 0:
+          case 1:
+            blank_counter = 2;
+            break;
+          case 2:
+            blank_counter = 7;
+            break;
+          case 3:
+            blank_counter = 13;  
+            break;
+          default:
+          break;
+        }   
+        if ((alarm == alarm1) || (alarm == alarm2)) {
+          display.setTextColor(SSD1306_BLACK);  // Draw black text
+          display.setTextSize(1);               // 1:1 pixel scale 
+          if (alarm == alarm1) {display.setCursor(cursorPositions1[index][0], cursorPositions1[index][1]);}
+          if (alarm == alarm2) {display.setCursor(cursorPositions2[index][0], cursorPositions2[index][1]);}
+          for (counter = 0; counter < blank_counter; counter++) { display.write(block_char);}
+          display.setTextColor(SSD1306_WHITE); // Draw white text
+          display.display();
+        }
+    }
+    if (!bflash && oldbflash)  {
+        Update_Display(myTime, myalarm1, myalarm2, temperature);
+        oldbflash = bflash;
+    }   
+}
+
+void editClock(byte index, DateTime *myTime, AlarmTime *myalarm1, AlarmTime *myalarm2, float temperature){
+     /* Display format:
+     *  
+     *  DOW DD/MM/YY
+     *  HH:MM:SS
+     *  10:00 Weekend
+     *  10:00 Weekend 18'
+     */
+    //                            hh             mm             ss             dd             mm             yyyy
+    byte cursorPositions[][2] = {{row2_c1,row2},{row2_c3,row2},{row2_c5,row2},{row1_c2,row1},{row1_c4,row1},{row1_c6,row1}};
+    unsigned long int time_marker;
+    time_marker = millis();
+    if ((time_marker - previousMillis) >= flashInterval) {
+      previousMillis = time_marker;
+      bflash = !bflash;
+    }
+    if (bflash && !oldbflash) {
+      oldbflash = bflash;
+      display.setTextColor(SSD1306_BLACK); // Draw black text
+      if (index > 2) {
+      display.setTextSize(2);      // 2:1 pixel scale 
+      } else {
+      display.setTextSize(3);      // 3:1 pixel scale
+      }
+      display.setCursor(cursorPositions[index][0],cursorPositions[index][1]);
+      display.write(block_char);
+      display.write(block_char);
+      display.setTextColor(SSD1306_WHITE); // Draw white text
+      display.display();
+    }  
+    if (!bflash && oldbflash)  {
+      Update_Display(myTime, myalarm1, myalarm2, temperature);
+      oldbflash = bflash;
+    }
 }

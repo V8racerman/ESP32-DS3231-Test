@@ -26,5 +26,7 @@ void Setup_Clock(void);
 void internet_time(void);
 void Update_temperature(float *temper);
 void preset_Alarms(uint8_t My_hr, uint8_t My_min, uint8_t My_sec, uint8_t selected_alarm);
+bool Update_Clock(DateTime *NT, AlarmTime *A1, AlarmTime *A2, float *xtemp);
+bool check_for_change(DateTime *NT, DateTime *PNT, AlarmTime *A1, AlarmTime *PA1, AlarmTime *A2, AlarmTime *PA2);
 
 #endif
