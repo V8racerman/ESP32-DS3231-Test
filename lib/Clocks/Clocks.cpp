@@ -1,10 +1,10 @@
 
 #include "SimpleAlarmClock.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/external_variables.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/clock_constants.h"
+#include "external_variables.h"
+#include "clock_constants.h"
 #include "Clocks.h"
 #include "GenUtils.h"
-#include "/home/alan/PlatformIO/credentials.h"
+#include "/home/alan/PlatformIO/mycredentials.h"
 
       /* I2C address can be found in the datasheet Figure 1. Device
          Address ZS-040 module has pull-up resistors on these pins
@@ -83,16 +83,15 @@ void internet_time(void) {
   int connected_to_remote_server = 0;
 
   // connect to WiFi
-  digitalWrite(LED_BUILTIN, HIGH);
-  digitalWrite(GREEN_LED_LEFT, LOW);
-  digitalWrite(GREEN_LED_RIGHT, LOW);
+  digitalWrite(LED_BUILTIN, LOW);  // turn internal BLUE LED ON
+  digitalWrite(LED_MIDDLE, LOW);   // turn external RED LED ON
   Serial.print("Connecting to ");
   Serial.print(ssid);
   WiFi.begin(ssid, password);
   connected_to_wifi = WiFi.status();
   while ((connected_to_wifi != WL_CONNECTED) && (attempt < attempts))
   {
-    // Display_Clock();
+    //Display_Clock();
     Serial.print(".");
     delay(500);
     attempt++;
@@ -101,13 +100,14 @@ void internet_time(void) {
 
   if (connected_to_wifi != WL_CONNECTED)
   {
-    digitalWrite(GREEN_LED_LEFT, HIGH);
-    Serial.println(" ");
+    Serial.println(".");
   }
   else
   {
+    digitalWrite(LED_BUILTIN, HIGH);  // Turn OFF builtin LED
     attempt = 0;
     Serial.println(" CONNECTED.  Initialising time reference ...");
+
     // init and get the time
     NowTime = Clock.read();
     bst = british_summer_time(NowTime);
@@ -132,10 +132,11 @@ void internet_time(void) {
     }
     if (!connected_to_remote_server)
     {
-      digitalWrite(GREEN_LED_RIGHT, HIGH);
-    }
+      digitalWrite(LED_MIDDLE, LOW);  // turn LED ON
+     }
     else
     {
+      digitalWrite(LED_MIDDLE, HIGH);  // turn LED OFF
       old_bst = bst;
       NowTime = internet_to_RTC(current_time, M24hr);
       bst = british_summer_time(NowTime);
@@ -163,24 +164,21 @@ void internet_time(void) {
         }
       }
     }
-    if (!connected_to_remote_server) {
-      digitalWrite(GREEN_LED_RIGHT, HIGH);
-    }
-    else {
+    if (!connected_to_remote_server) { digitalWrite(LED_MIDDLE, LOW);   // turn RED LED ON 
+    } else {
       // NowTime = Clock.read();
       NowTime = internet_to_RTC(current_time, M24hr);
       old_bst = bst;
       bst = british_summer_time(NowTime);
       Clock.write(NowTime);
       Serial.print("Time reference initialised. ");
-      digitalWrite(GREEN_LED_RIGHT, LOW);
-    }
+      digitalWrite(LED_MIDDLE, HIGH);   // turn RED LED OFF
+      }
     // disconnect WiFi as it's no longer needed
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     Serial.println("Wi-Fi disconnected and turned off.");
   }
-  digitalWrite(BLUE_LED, LOW);
 }
 
 /* ***********************************************************
@@ -465,7 +463,6 @@ byte CheckAlarmStatus(){
 void clearAlarms(void){
     //Clear alarm flags
     Clock.clearAlarms();
-    toggleLED(false, BLUE_LED);
    }
 
 void Snooze(byte active){
@@ -494,7 +491,6 @@ void Snooze(byte active){
         //do nothing
         break;
     }
-    toggleLED(false, BLUE_LED);                  // Confirm LED turned off
 }
 
 void preset_Alarms(uint8_t My_hr, uint8_t My_min, uint8_t My_sec, uint8_t selected_alarm) {

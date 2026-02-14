@@ -3,16 +3,13 @@
 
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
+#include "mygpio.h"
+#include "external_variables.h"
+#include "clock_constants.h"
 #include "SimpleAlarmClock.h"
-
-// #include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/setgpio.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/external_variables.h"
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/clock_constants.h"
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-// Screen Mapping
 
 // Display Character Placement Map
 const char degree     = 0xF8;   // extended character 248 - degree symbol
@@ -47,12 +44,6 @@ const byte row4_c3 = 3*CHAR_WIDTH;
 const byte row4_c4 = 7*CHAR_WIDTH;
 
 
-// 6 Pin OLED Display
-#define OLED_CLK_D0 17 //19 //18 //32  // D0
-#define OLED_MOSI_D1 5 //18 //23 //33  //D1
-#define OLED_RESET  18 // 5 // 5
-#define OLED_DC     19 //17 //17 //26
-#define OLED_CS     16 //23 //16 //-1 Not Used
 
 char* mode2str(byte bMode);
 char* dow2Str(byte bDow);
@@ -61,5 +52,7 @@ void Update_Display(DateTime *clk, AlarmTime *A1, AlarmTime *A2, int Temperature
 void setup_OLED(void);
 void editAlarm(byte alarm, byte index, DateTime *myTime, AlarmTime *myalarm1, AlarmTime *myalarm2, float temperature);
 void editClock(byte index, DateTime *myTime, AlarmTime *myalarm1, AlarmTime *myalarm2, float temperature);
+void flashDisplay(unsigned long *prev_millis, bool *state);
+void DisplayInvert(void);
 
 #endif
