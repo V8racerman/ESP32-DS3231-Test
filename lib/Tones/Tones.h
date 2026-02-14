@@ -2,7 +2,7 @@
 #define tones_h
 #include "Clocks.h"
 
-#define BUZZER_PIN 4
+
 
 /* Set up the LEDC timer Functions */
 // use first channel of 16 channels (started from zero)
@@ -47,6 +47,5 @@ const int number_of_notes[] = {20, 18, 9, 18, 9};
 
 int beeps(int note, int duration, int counter);
 bool Play_Alarm(void);
-void Setup_Tone(void);
 
 #endif

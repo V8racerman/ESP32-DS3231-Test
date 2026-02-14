@@ -2,11 +2,7 @@
 #define Clocks_h
 #include <Arduino.h>
 #include <WiFi.h>
-#include "/home/alan/PlatformIO/Projects/Development/ESP32/ESP32 DS3231 Test/include/setgpio.h"
-
-#define LED_LEFT 25
-#define LED_RIGHT 27
-#define LED_MIDDLE 26
+#include "mygpio.h"
 
 #include "TimeUtils.h"
 

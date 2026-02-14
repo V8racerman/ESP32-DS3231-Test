@@ -1,9 +1,6 @@
-// #include "SimpleAlarmClock.h"
 #include <Arduino.h>
-// #include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/setgpio.h"
 #include "Tones.h"
-// #include "/home/alan/PlatformIO/Projects/Development/ESP32/Star Wars Clock/include/external_variables.h"
-#include "Clocks.h"
+#include "mygpio.h"
 
 const int number_of_melodies = 5;
 const int loop_max = 5;
@@ -41,7 +38,6 @@ int beep(int note, int duration, int counter) {
 
  bool Play_Alarm(void) {
 
-digitalWrite(LED_MIDDLE, LOW);
 switch (melody_index) {
   case 0:
     nx = beep(first_section_notes[nx], 25*first_section_durations[nx], nx);
@@ -72,26 +68,12 @@ switch (melody_index) {
       melody_index = 0;
       loop_counter = 0;
       Serial.print("Alarm Ended");
-      digitalWrite(LED_MIDDLE, HIGH);
       clearAlarms();
       // ClockState = ShowClock; 
       return (false); 
     }     
   } 
   return (true);
-  }
-
-  void Setup_Tone(void) {
-    pinMode(LED_LEFT, OUTPUT);
-    digitalWrite(LED_LEFT, HIGH);
-    pinMode(LED_RIGHT, OUTPUT);
-    digitalWrite(LED_RIGHT, HIGH);
-    pinMode(LED_MIDDLE, OUTPUT);
-    digitalWrite(LED_MIDDLE, HIGH);
-    pinMode(BUZZER_PIN, OUTPUT);
-    digitalWrite(BUZZER_PIN, HIGH);
-    ledcSetup(LEDC_CHANNEL_0, LEDC_TONE_FREQ, LEDC_TIMER_2_BIT);
-    ledcAttachPin(BUZZER_PIN, LEDC_CHANNEL_0);
   }
 
 
